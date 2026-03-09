@@ -41,11 +41,13 @@ Internal notes for contributors and agents. Use `README.md` as the public source
 - Accuracy pages and checkers are now expected to be green in all three installed browsers on fresh runs; if a page disagrees, suspect stale tabs/servers before changing the algorithm.
 - Keep `src/layout.test.ts` small and durable. For browser-specific or narrow hypothesis work, prefer throwaway probes/scripts and promote only the stable invariants into permanent tests.
 - For Gatsby canary work, sweep widths cheaply first and only diagnose the mismatching widths in detail. The slow detailed checker is for narrowing root causes, not for every width by default.
+- For Arabic corpus work, trust the RTL `Range`-based diagnostics over the old span-probe path. The remaining misses are currently more about break policy than raw width sums.
 
 ### Open questions
 
 - Locale switch: expose a way to reinitialize the hoisted segmenters and clear cache for a new locale.
 - Decide whether line-fit tolerance should stay as a browser-specific shim or move to runtime calibration alongside emoji correction.
+- Decide whether remaining Arabic accuracy needs a richer break-policy model or a truly shaping-aware architecture beyond segment-sum layout.
 - `layoutWithLines()` may want ranges/indices instead of `{ text, width }` to avoid materializing substrings.
 - ASCII fast path could skip some CJK, bidi, and emoji overhead.
 - Benchmark methodology still needs review.

@@ -258,6 +258,111 @@ What held up:
 
 What did **not** change:
 - `layout()` stayed arithmetic-only on cached widths
+
+## Multilingual corpus stress canaries
+
+After the main browser corpus reached clean sweeps in Chrome, Safari, and Firefox, we added long-form canaries in `corpora/` plus `/corpus` diagnostics:
+- Korean: `운수 좋은 날`
+- Hindi: `ईदगाह`
+- Arabic: `رسالة الغفران/الجزء الأول`
+
+This changed the job of the accuracy work:
+- the official sweep stayed the regression gate
+- the corpus pages became research canaries for longer prose and rarer break patterns
+
+The first useful results:
+- Korean was already close and later reached exact coarse sweeps with a narrow Chromium-only quote-following Hangul rule.
+- Hindi became exact once Devanagari danda punctuation (`।`, `॥`) was treated like other left-sticky punctuation.
+- Arabic improved a lot once Arabic punctuation (`،`, `؛`, `؟`) was added to the same left-sticky set, but remained the main structural gap.
+
+## Arabic corpus cleanup and diagnostics
+
+The Arabic corpus initially included obvious Wikisource scaffolding (`===`, stray `</ref>`, `|}`), which polluted both the corpus and the diagnostics.
+
+Cleaning that text immediately removed several suspicious misses:
+- widths `330`, `340`, `350` became exact
+
+The diagnostics page also needed an RTL-specific fix:
+- span-by-span line probing perturbed Arabic shaping and produced misleading line reconstructions
+- for RTL content, a `Range`-based extraction path was much more trustworthy
+
+That distinction mattered. After the fix, some Arabic mismatches that previously looked like width-drift bugs turned out to be real browser break-choice differences.
+
+## Rejected: Arabic pair/boundary corrections
+
+First attempt at a richer Arabic model:
+- for adjacent Arabic-ish segment boundaries, precompute a correction
+- apply that correction during `layout()` when the exact adjacent pair stays on the same line
+
+Why it seemed plausible:
+- Arabic shaping is contextual
+- isolated-word sums can diverge from shaped phrase widths
+- a local boundary delta is the smallest possible upgrade to the current model
+
+Result:
+- no meaningful improvement on the Arabic canary widths
+- big cost increase in both `prepare()` and `layout()`
+
+Representative outcome:
+- Arabic sentinel widths such as `310`, `360`, `470`, `890` stayed essentially unchanged
+- top-level `prepare()` rose from the mid-20ms range to the low-40ms range
+- Arabic long-form `prepare()` rose to roughly `200ms`
+- `layout()` also slowed measurably
+
+Conclusion:
+- local pair corrections were too weak to explain the remaining Arabic drift
+- the remaining problem is not just "sum isolated words plus small edge deltas"
+
+## Rejected: Arabic run slice widths
+
+Second attempt at a larger shaping-aware model:
+- detect contiguous Arabic runs during `prepare()`
+- store run-local offsets
+- when a line stays inside one Arabic run, let `layout()` query cached exact run-slice widths instead of summing segments
+
+This was intentionally much larger than pair corrections, but still kept `layout()` arithmetic-only from the caller’s perspective.
+
+Result:
+- the hard Arabic widths still did not move meaningfully
+- `layout()` regressed badly, especially on Arabic corpora
+
+Representative outcome:
+- sentinel widths still looked like:
+  - `310 -> -170px`
+  - `360 -> -102px`
+  - `470 -> -68px`
+  - `890 -> +34px`
+- benchmark impact while the experiment was active:
+  - top-level `layout()` roughly `0.03ms -> 0.13ms`
+  - Arabic corpus `layout()` roughly `0.07ms -> 0.95ms`
+
+Conclusion:
+- "larger shaping context" by itself is not the missing lever
+- the remaining Arabic misses are not mostly fixed by asking for wider exact substring widths
+- the experiment was reverted
+
+## Current Arabic conclusion
+
+The remaining Arabic misses are mixed:
+- some lines still show real shaping/context sensitivity
+- several of the worst misses are clearly different browser break choices around phrase boundaries such as `فيقول:` or `همزةٌ،`
+
+Representative diagnostic:
+- at width `310`, the first bad break is around ` فيقول:`
+- our candidate line width is internally consistent (`sum ~= full ~= DOM`)
+- the browser still breaks differently
+
+So the next Arabic step is probably **not** another local width-cache heuristic.
+
+The more likely paths now are:
+- better Arabic break-policy modeling around punctuation/space/phrase boundaries
+- or, if that fails, a more structural engine change closer to browser shaping-safe break behavior
+
+What we know now:
+- `Intl.Segmenter` is not obviously the main issue
+- punctuation attachment was worth fixing
+- corpus hygiene and RTL diagnostics were worth fixing
+- local and medium-sized shaping-width enrichments were not enough
 - no hot-path `measureText()` verification was reintroduced
 - the browser-facing public API stayed `prepare()` / `layout()`
 
