@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>버블보블 🫧 — Pretext Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: #0b0716; }
+
+    /* CRT Monitor Effect */
+    #crt-overlay {
+      position: fixed; inset: 0; z-index: 999;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      background-size: 100% 2px, 3px 100%;
+      pointer-events: none;
+    }
+
+    /* Core Canvas layer */
+    #canvas {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      image-rendering: pixelated; /* To give it a sharp retro feel despite using canvas primitives */
+      background: #000;
+      border: 4px solid #1c1538;
+      border-radius: 8px;
+    }
+
+    /* Floating UI */
+    #hud {
+      position: fixed; top: 0; left: 0; right: 0; height: 52px; z-index: 200;
+      background: rgba(5,2,15,0.8); backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; padding: 0 18px; gap: 14px;
+    }
+    #home-btn {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600;
+      color: rgba(255,255,255,0.7); cursor: pointer; font-family: inherit; transition: all .15s;
+    }
+    #home-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .hud-title { font-size: 16px; font-weight: 800; background: linear-gradient(135deg,#34d399,#3b82f6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    
+    #score-box { margin-left: auto; font-size: 13px; color: rgba(255,255,255,0.6); }
+    #score-val { font-weight: 900; font-size: 18px; color: #34d399; }
+    
+    #1up { font-size: 14px; color: red; font-family: 'Courier New', Courier, monospace; font-weight: 900; animation: blink 1s infinite alternate; }
+    @keyframes blink { 0% { opacity: 1; } 100% { opacity: 0.3; } }
+
+    /* The overlay for Game Over / Next Level */
+    #overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(4px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+      display: none;
+    }
+    #overlay.on { display: flex; }
+    #overlay-title { font-size: 64px; font-weight: 900; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+    #overlay-sub { font-size: 20px; color: rgba(255,255,255,0.6); }
+    .ovl-btn {
+      padding: 14px 32px; border-radius: 14px; font-size: 16px; font-weight: 700;
+      font-family: inherit; cursor: pointer; border: none; color: #fff;
+      background: linear-gradient(135deg,#3b82f6,#8b5cf6); transition: all .15s;
+    }
+    .ovl-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+
+    /* Floating text layer for Pretext fast measuring */
+    #floats {
+      position: fixed; top: 50%; left: 50%; width: 800px; height: 600px;
+      transform: translate(-50%, -50%);
+      z-index: 100; pointer-events: none;
+    }
+    .ftext {
+      position: absolute; font-weight: 900; font-family: "Impact", "Inter", sans-serif;
+      text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+      color: #fff;
+      pointer-events: none;
+      animation: pts_rise 1.5s ease-out forwards;
+    }
+    @keyframes pts_rise {
+      0% { transform: translateY(0) scale(0.5); opacity: 0; }
+      10% { transform: translateY(-10px) scale(1.2); opacity: 1; }
+      80% { transform: translateY(-40px) scale(1); opacity: 1; }
+      100% { transform: translateY(-50px) scale(0.9); opacity: 0; }
+    }
+
+    #controls-hint {
+      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+      font-size: 13px; color: rgba(255,255,255,0.4); z-index: 300; pointer-events: none;
+      background: rgba(0,0,0,0.5); padding: 6px 14px; border-radius: 20px;
+      display: flex; gap: 16px;
+    }
+    #controls-hint span { display: flex; align-items: center; gap: 6px; }
+    .key { background: #333; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 11px; color: #fff; border-bottom: 2px solid #111; }
+  </style>
+</head>
+<body>
+  <div id="crt-overlay"></div>
+  
+  <div id="hud">
+    <button id="home-btn" onclick="location.href='./home'">🏠 홈</button>
+    <span class="hud-title">🫧 버블보블</span>
+    <span id="1up">1UP</span>
+    <div id="score-box">SCORE <span id="score-val">0</span></div>
+  </div>
+
+  <!-- Logical resolution: 800x600 -->
+  <canvas id="canvas" width="800" height="600"></canvas>
+  <div id="floats"></div>
+
+  <div id="controls-hint">
+    <span><span class="key">←</span> <span class="key">→</span> 이동</span>
+    <span><span class="key">↑</span> 점프</span>
+    <span><span class="key">Space</span> 버블 발사</span>
+  </div>
+
+  <div id="overlay">
+    <div id="overlay-title">LEVEL CLEAR</div>
+    <div id="overlay-sub">모든 적을 무찔렀습니다!</div>
+    <button class="ovl-btn" id="ovl-next">다음 레벨 ▶</button>
+  </div>
+
+  <script type="module" src="./bubble-bobble.ts"></script>
+</body>
+</html>

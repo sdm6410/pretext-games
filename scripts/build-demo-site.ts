@@ -5,6 +5,7 @@ const root = process.cwd()
 const outdir = path.join(root, 'site')
 const entrypoints = [
   'pages/angry-birds.html',
+  'pages/bubble-bobble.html',
   'pages/home.html',
   'pages/pet-game.html',
   'pages/word-gravity.html',
@@ -35,6 +36,7 @@ if (result.exitCode !== 0) {
 const targets = [
   { source: 'index.html', target: 'demos/index.html' },
   { source: 'home.html', target: 'index.html' },
+  { source: 'bubble-bobble.html', target: 'bubble-bobble/index.html' },
   { source: 'pet-game.html', target: 'pet-game/index.html' },
   { source: 'angry-birds.html', target: 'angry-birds/index.html' },
   { source: 'word-gravity.html', target: 'word-gravity/index.html' },
