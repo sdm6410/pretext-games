@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>동물 키우기 🐾 — Pretext Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; }
+
+    #world {
+      position: fixed; inset: 0;
+      background: linear-gradient(to bottom, #0d0824 0%, #1a0f3e 40%, #2d1b1b 75%, #1a3012 85%, #0e200a 100%);
+      overflow: hidden;
+    }
+
+    /* Stars */
+    #stars { position: absolute; inset: 0; pointer-events: none; }
+
+    /* Ground */
+    #ground {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 120px;
+      background: linear-gradient(to bottom, #2d5016 0%, #1a3009 60%, #0e1f06 100%);
+      border-top: 3px solid rgba(80,160,30,0.5);
+    }
+    #ground::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 14px;
+      background: repeating-linear-gradient(90deg, transparent 0px, transparent 30px, rgba(100,180,40,0.15) 30px, rgba(100,180,40,0.15) 32px);
+    }
+
+    /* Top HUD */
+    #hud {
+      position: fixed; top: 0; left: 0; right: 0; height: 52px; z-index: 300;
+      background: rgba(8,5,20,0.82); backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; padding: 0 18px; gap: 16px;
+    }
+    .hud-logo { font-size: 17px; font-weight: 800; background: linear-gradient(135deg,#f59e0b,#ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    #day-label { font-size: 12px; color: rgba(255,255,255,0.45); }
+    #pretext-note { margin-left: auto; font-size: 10px; color: rgba(139,92,246,0.7); background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2); border-radius: 6px; padding: 3px 8px; }
+
+    /* Selected pet panel */
+    #panel {
+      position: fixed; top: 62px; right: 14px; width: 200px;
+      background: rgba(8,5,20,0.88); backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.09); border-radius: 16px;
+      padding: 14px; z-index: 300; display: none;
+    }
+    #panel.on { display: block; }
+    #p-emoji { font-size: 34px; display: block; margin-bottom: 4px; }
+    #p-name { font-size: 16px; font-weight: 700; color: #fff; }
+    #p-state { font-size: 11px; color: rgba(255,255,255,0.4); margin: 2px 0 10px; }
+    .sl { font-size: 10px; color: rgba(255,255,255,0.45); display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .sb { height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; margin-bottom: 8px; overflow: hidden; }
+    .si { height: 100%; border-radius: 3px; transition: width 0.4s; }
+    .s-hunger .si { background: linear-gradient(90deg,#f59e0b,#ef4444); }
+    .s-happy  .si { background: linear-gradient(90deg,#ec4899,#8b5cf6); }
+    .s-energy .si { background: linear-gradient(90deg,#10b981,#3b82f6); }
+    #p-age { font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 4px; }
+
+    /* Action bar */
+    #actions {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 76px; z-index: 300;
+      background: rgba(8,5,20,0.88); backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 16px;
+    }
+    .abtn {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 8px 16px; cursor: pointer; font-family: inherit;
+      color: rgba(255,255,255,0.65); font-size: 11px; font-weight: 600;
+      transition: all .15s;
+    }
+    .abtn:hover:not(:disabled) { background: rgba(255,255,255,0.11); color: #fff; transform: translateY(-2px); }
+    .abtn:disabled { opacity: .3; cursor: default; }
+    .abtn span:first-child { font-size: 20px; }
+    #btn-new {
+      background: linear-gradient(135deg,#f59e0b,#ef4444); border: none;
+      border-radius: 12px; padding: 8px 16px; cursor: pointer; font-family: inherit;
+      color: #fff; font-size: 11px; font-weight: 700; display: flex; flex-direction: column;
+      align-items: center; gap: 3px; transition: all .15s;
+    }
+    #btn-new:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(245,158,11,0.4); }
+    #btn-new span:first-child { font-size: 20px; }
+    #hint { font-size: 11px; color: rgba(255,255,255,0.25); text-align: center; }
+
+    /* Pet entity */
+    .pet {
+      position: absolute; display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; user-select: none; transition: filter .2s;
+    }
+    .pet:hover { filter: brightness(1.25); }
+    .pet.sel { filter: drop-shadow(0 0 14px rgba(245,158,11,0.9)); }
+    .pet-emoji { line-height: 1; display: block; }
+    .pet-tag {
+      font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.85);
+      background: rgba(0,0,0,0.55); border-radius: 5px; padding: 1px 6px;
+      margin-top: 2px; white-space: nowrap;
+    }
+
+    /* Speech bubble — sized by Pretext! */
+    .bubble {
+      position: absolute; background: rgba(255,255,255,0.96); color: #1a1a2e;
+      border-radius: 12px; padding: 7px 11px; font-size: 13px; font-weight: 500;
+      line-height: 1.5; white-space: nowrap; pointer-events: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35); animation: bpop .18s ease-out; z-index: 200;
+    }
+    .bubble::after {
+      content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+      border: 6px solid transparent; border-top-color: rgba(255,255,255,0.96); border-bottom: none;
+    }
+    @keyframes bpop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* Floating stat text — Pretext centers it! */
+    .ftext {
+      position: absolute; font-size: 13px; font-weight: 700; pointer-events: none;
+      z-index: 250; animation: fup 1.6s ease-out forwards;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    }
+    @keyframes fup { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
+  </style>
+</head>
+<body>
+  <div id="world">
+    <canvas id="stars"></canvas>
+    <div id="ground"></div>
+  </div>
+
+  <div id="hud">
+    <span class="hud-logo">🐾 동물 키우기</span>
+    <span id="day-label">Day 1</span>
+    <span id="pretext-note">💬 말풍선 크기 = Pretext 측정</span>
+  </div>
+
+  <div id="panel">
+    <span id="p-emoji">🐱</span>
+    <div id="p-name">코코</div>
+    <div id="p-state">산책 중</div>
+    <div class="sl"><span>🍎 배고픔</span><span id="sv-h">80</span></div>
+    <div class="sb s-hunger"><div class="si" id="sb-h" style="width:80%"></div></div>
+    <div class="sl"><span>💕 행복도</span><span id="sv-hp">70</span></div>
+    <div class="sb s-happy"><div class="si" id="sb-hp" style="width:70%"></div></div>
+    <div class="sl"><span>⚡ 에너지</span><span id="sv-e">90</span></div>
+    <div class="sb s-energy"><div class="si" id="sb-e" style="width:90%"></div></div>
+    <div id="p-age">아기 🍼</div>
+  </div>
+
+  <div id="actions">
+    <div id="hint">동물을 클릭해서 선택하세요!</div>
+    <button class="abtn" id="btn-feed" disabled><span>🍎</span><span>밥주기</span></button>
+    <button class="abtn" id="btn-pet"  disabled><span>💆</span><span>쓰다듬기</span></button>
+    <button class="abtn" id="btn-play" disabled><span>🎮</span><span>같이 놀기</span></button>
+    <button class="abtn" id="btn-sleep" disabled><span>🛏</span><span>재우기</span></button>
+    <button id="btn-new"><span>✨</span><span>새 동물</span></button>
+  </div>
+
+  <script type="module" src="./pet-game.ts"></script>
+</body>
+</html>

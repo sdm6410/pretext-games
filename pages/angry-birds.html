@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>앵그리버드 🐦 — Pretext Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: #1a0a3e; }
+
+    /* Sky gradient */
+    #sky {
+      position: fixed; inset: 0;
+      background: linear-gradient(to bottom, #0d0824 0%, #1a2060 45%, #3d5a2a 78%, #2a3d1a 88%, #1a2810 100%);
+    }
+
+    /* Clouds */
+    .cloud { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.06); filter: blur(20px); pointer-events: none; }
+
+    /* Canvas */
+    #canvas { position: fixed; inset: 0; z-index: 10; cursor: crosshair; }
+
+    /* HUD */
+    #hud {
+      position: fixed; top: 0; left: 0; right: 0; height: 52px; z-index: 200;
+      background: rgba(5,2,15,0.8); backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; padding: 0 18px; gap: 14px;
+    }
+    #home-btn {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600;
+      color: rgba(255,255,255,0.7); cursor: pointer; font-family: inherit; transition: all .15s;
+    }
+    #home-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .hud-title { font-size: 16px; font-weight: 800; background: linear-gradient(135deg,#f59e0b,#ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    #score-box { margin-left: auto; font-size: 13px; color: rgba(255,255,255,0.6); }
+    #score-val { font-weight: 800; font-size: 18px; color: #f59e0b; }
+    #level-box { font-size: 12px; color: rgba(255,255,255,0.4); }
+    #birds-left { font-size: 12px; color: rgba(255,255,255,0.5); }
+
+    /* Floating text container */
+    #floats { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
+    .ftext {
+      position: absolute; font-weight: 800; pointer-events: none;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+      animation: fup 1.2s ease-out forwards;
+    }
+    @keyframes fup { 0%{transform:translateY(0) scale(1);opacity:1;} 100%{transform:translateY(-60px) scale(1.2);opacity:0;} }
+
+    /* Overlay */
+    #overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+      display: none;
+    }
+    #overlay.on { display: flex; }
+    #overlay-title { font-size: 56px; font-weight: 900; }
+    #overlay-sub { font-size: 20px; color: rgba(255,255,255,0.6); }
+    #overlay-score { font-size: 32px; font-weight: 800; color: #f59e0b; }
+    .ovl-btn {
+      padding: 14px 32px; border-radius: 14px; font-size: 16px; font-weight: 700;
+      font-family: inherit; cursor: pointer; border: none; color: #fff;
+      background: linear-gradient(135deg,#ef4444,#f97316); transition: all .15s;
+    }
+    .ovl-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239,68,68,0.4); }
+
+    /* Pretext badge */
+    #ptbadge {
+      position: fixed; bottom: 12px; right: 12px; z-index: 300;
+      background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 8px; padding: 4px 10px; font-size: 10px; color: rgba(139,92,246,0.8);
+    }
+
+    /* Aim guide */
+    #aim-hint {
+      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+      font-size: 12px; color: rgba(255,255,255,0.3); z-index: 300; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="sky">
+    <div class="cloud" style="width:300px;height:120px;top:15%;left:10%;"></div>
+    <div class="cloud" style="width:200px;height:80px;top:25%;left:55%;"></div>
+    <div class="cloud" style="width:250px;height:100px;top:10%;left:70%;"></div>
+  </div>
+
+  <canvas id="canvas"></canvas>
+  <div id="floats"></div>
+
+  <div id="hud">
+    <button id="home-btn" onclick="location.href='/home'">🏠 홈</button>
+    <span class="hud-title">🐦 앵그리버드</span>
+    <span id="level-box">LEVEL <span id="lv">1</span></span>
+    <span id="birds-left">새: <span id="bcount">🐦🐦🐦🐦🐦</span></span>
+    <div id="score-box">점수: <span id="score-val">0</span></div>
+  </div>
+
+  <div id="overlay">
+    <div id="overlay-title">🎉</div>
+    <div id="overlay-sub"></div>
+    <div id="overlay-score"></div>
+    <button class="ovl-btn" id="ovl-next">다음 레벨 ▶</button>
+  </div>
+
+  <div id="ptbadge">💬 데미지 숫자 = Pretext 측정</div>
+  <div id="aim-hint">새를 끌어당겨 발사하세요 🖱️</div>
+
+  <script type="module" src="./angry-birds.ts"></script>
+</body>
+</html>

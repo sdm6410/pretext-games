@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Gravity — Pretext Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --ui-height: 116px;
+        --floor-h: 64px;
+        --purple: 139, 92, 246;
+        --green: 16, 185, 129;
+        --amber: 245, 158, 11;
+        --red: 239, 68, 68;
+        --blue: 59, 130, 246;
+        --pink: 236, 72, 153;
+        --cyan: 6, 182, 212;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #08080f;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        color: #fff;
+      }
+
+      /* ── Background grid ── */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: linear-gradient(rgba(139, 92, 246, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(139, 92, 246, 0.04) 1px, transparent 1px);
+        background-size: 48px 48px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* ── UI Panel ── */
+      #ui {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--ui-height);
+        z-index: 200;
+        background: rgba(8, 8, 15, 0.85);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border-bottom: 1px solid rgba(139, 92, 246, 0.18);
+        padding: 14px 20px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .input-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      #text-input {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        padding: 9px 14px;
+        color: #fff;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      #text-input:focus {
+        border-color: rgba(var(--purple), 0.6);
+        box-shadow: 0 0 0 3px rgba(var(--purple), 0.12);
+      }
+      #text-input::placeholder {
+        color: rgba(255, 255, 255, 0.28);
+      }
+
+      .btn {
+        padding: 9px 16px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+        white-space: nowrap;
+        line-height: 1;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+      .btn:active {
+        transform: translateY(0);
+        opacity: 0.85;
+      }
+
+      #launch-btn {
+        background: linear-gradient(135deg, rgb(var(--purple)), rgb(79, 70, 229));
+        color: #fff;
+        box-shadow: 0 2px 12px rgba(var(--purple), 0.35);
+      }
+      #launch-btn:hover {
+        box-shadow: 0 4px 20px rgba(var(--purple), 0.5);
+      }
+
+      #bomb-btn {
+        background: linear-gradient(135deg, rgb(var(--red)), rgb(249, 115, 22));
+        color: #fff;
+        box-shadow: 0 2px 12px rgba(var(--red), 0.35);
+      }
+      #bomb-btn:hover {
+        box-shadow: 0 4px 20px rgba(var(--red), 0.5);
+      }
+
+      #clear-btn {
+        background: rgba(255, 255, 255, 0.07);
+        color: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      /* ── Preset chips ── */
+      .presets {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        overflow: hidden;
+        max-height: 30px;
+      }
+
+      .chip {
+        padding: 4px 11px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.7);
+        font-family: inherit;
+        transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+      }
+      .chip:hover {
+        background: rgba(var(--purple), 0.18);
+        border-color: rgba(var(--purple), 0.45);
+        color: #fff;
+        transform: translateY(-1px);
+      }
+
+      /* ── Stage ── */
+      #stage {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        overflow: hidden;
+      }
+
+      /* ── Big background text ── */
+      #bg-title {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -42%);
+        font-size: clamp(60px, 10vw, 120px);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: rgba(255, 255, 255, 0.03);
+        pointer-events: none;
+        z-index: 5;
+        text-align: center;
+        line-height: 1;
+        user-select: none;
+        transition: opacity 0.6s;
+      }
+
+      /* ── Floor ── */
+      #floor {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: var(--floor-h);
+        background: linear-gradient(to top, rgba(var(--purple), 0.07), transparent);
+        border-top: 1px solid rgba(var(--purple), 0.12);
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      /* ── Info footer ── */
+      #info {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.2);
+        pointer-events: none;
+        z-index: 150;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      /* ── Cards ── */
+      .card {
+        position: absolute;
+        top: 0;
+        left: 0;
+        border-radius: 14px;
+        padding: 11px 14px;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        font-size: 15px;
+        line-height: 1.55;
+        pointer-events: auto;
+        cursor: grab;
+        user-select: none;
+        will-change: transform;
+        transform-origin: center center;
+        transition: box-shadow 0.2s;
+      }
+      .card:active {
+        cursor: grabbing;
+      }
+      .card.dragging {
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
+      }
+
+      .card-inner {
+        white-space: nowrap;
+        overflow: visible;
+      }
+
+      .measure-tag {
+        position: absolute;
+        top: -7px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 5px;
+        font-size: 9px;
+        padding: 1px 5px;
+        color: rgba(255, 255, 255, 0.35);
+        pointer-events: none;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+      }
+
+      /* ── Bomb shockwave ── */
+      .shockwave {
+        position: fixed;
+        border-radius: 50%;
+        border: 2px solid rgba(var(--red), 0.7);
+        pointer-events: none;
+        z-index: 300;
+        animation: shockwave-expand 0.5s ease-out forwards;
+      }
+
+      @keyframes shockwave-expand {
+        from {
+          width: 0;
+          height: 0;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          opacity: 1;
+        }
+        to {
+          width: 600px;
+          height: 600px;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          opacity: 0;
+        }
+      }
+
+      /* ── Spawn animation ── */
+      @keyframes card-spawn {
+        from {
+          opacity: 0;
+          transform: scale(0.7);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+
+    <div id="ui">
+      <div class="input-row">
+        <input
+          id="text-input"
+          type="text"
+          placeholder="텍스트 입력 후 Enter... 한국어, Arabic, 日本語, Emoji 다 됩니다 🚀"
+          maxlength="80"
+          autocomplete="off"
+        />
+        <button class="btn" id="launch-btn">🚀 발사</button>
+        <button class="btn" id="bomb-btn">💥 폭발</button>
+        <button class="btn" id="clear-btn">지우기</button>
+      </div>
+      <div class="presets" id="presets"></div>
+    </div>
+
+    <div id="bg-title">WORD<br />GRAVITY</div>
+    <div id="floor"></div>
+    <div id="info">
+      Pretext가 DOM 없이 정확한 텍스트 크기를 측정 → 물리 충돌 박스로 사용 • 드래그로 카드 이동 가능
+    </div>
+
+    <script type="module" src="./word-gravity.ts"></script>
+  </body>
+</html>

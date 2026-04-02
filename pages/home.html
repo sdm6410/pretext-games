@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>🎮 Pretext Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; font-family: 'Inter', system-ui, sans-serif; background: #06030f; color: #fff; overflow-x: hidden; }
+
+    /* ── Animated background ── */
+    #bg {
+      position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99,57,220,0.25) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 40% at 80% 80%, rgba(236,72,153,0.12) 0%, transparent 60%),
+                  #06030f;
+    }
+    .star { position: fixed; border-radius: 50%; background: #fff; pointer-events: none; animation: twinkle var(--d,3s) ease-in-out infinite alternate; }
+    @keyframes twinkle { from { opacity: var(--a,.2); } to { opacity: var(--b,.7); } }
+
+    /* ── Content ── */
+    .wrap { position: relative; z-index: 10; max-width: 1000px; margin: 0 auto; padding: 64px 24px 80px; }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 64px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3);
+      border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 600;
+      color: rgba(139,92,246,0.9); margin-bottom: 20px; letter-spacing: .05em;
+    }
+    h1 {
+      font-size: clamp(40px,7vw,72px); font-weight: 900; letter-spacing: -.03em;
+      background: linear-gradient(135deg, #fff 30%, rgba(139,92,246,0.8));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      line-height: 1.1; margin-bottom: 16px;
+    }
+    .subtitle { font-size: 16px; color: rgba(255,255,255,0.45); max-width: 500px; margin: 0 auto; line-height: 1.6; }
+
+    /* ── Games grid ── */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+
+    .card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px; padding: 28px; cursor: pointer;
+      transition: transform .2s, border-color .2s, box-shadow .2s, background .2s;
+      text-decoration: none; display: block; position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: ''; position: absolute; inset: 0; border-radius: 24px;
+      background: var(--glow); opacity: 0; transition: opacity .3s;
+    }
+    .card:hover { transform: translateY(-6px); border-color: rgba(255,255,255,0.18); }
+    .card:hover::before { opacity: 1; }
+    .card:hover .play-btn { transform: scale(1.05); }
+
+    .card-icon { font-size: 52px; margin-bottom: 16px; display: block; }
+    .card-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .card-desc { font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.6; margin-bottom: 20px; }
+
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+    .tag {
+      font-size: 10px; font-weight: 600; letter-spacing: .06em;
+      padding: 3px 8px; border-radius: 6px;
+      background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5);
+    }
+
+    .play-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 700;
+      font-family: inherit; cursor: pointer; border: none; transition: transform .15s;
+      background: var(--btn-bg); color: #fff;
+    }
+
+    /* Card color themes */
+    .card-pet   { --glow: linear-gradient(135deg,rgba(245,158,11,.08),transparent); --btn-bg: linear-gradient(135deg,#f59e0b,#ef4444); }
+    .card-birds { --glow: linear-gradient(135deg,rgba(239,68,68,.08),transparent);  --btn-bg: linear-gradient(135deg,#ef4444,#f97316); }
+    .card-word  { --glow: linear-gradient(135deg,rgba(139,92,246,.08),transparent); --btn-bg: linear-gradient(135deg,#8b5cf6,#6366f1); }
+
+    /* ── Footer ── */
+    .footer { text-align: center; margin-top: 64px; font-size: 12px; color: rgba(255,255,255,0.2); }
+    .footer a { color: rgba(139,92,246,0.6); text-decoration: none; }
+    .footer a:hover { color: rgba(139,92,246,0.9); }
+  </style>
+</head>
+<body>
+  <div id="bg"></div>
+  <div class="wrap">
+    <div class="header">
+      <div class="badge">✨ Powered by Pretext</div>
+      <h1>Pretext Games</h1>
+      <p class="subtitle">DOM 없이 텍스트를 측정하는 Pretext 라이브러리로 만든 게임 모음입니다</p>
+    </div>
+
+    <div class="grid">
+      <a class="card card-pet" href="/pet-game">
+        <span class="card-icon">🐾</span>
+        <div class="card-title">동물 키우기</div>
+        <div class="card-desc">귀여운 동물들을 돌봐주세요! 말풍선 크기를 Pretext가 DOM 없이 정확하게 계산합니다.</div>
+        <div class="card-tags">
+          <span class="tag">SIMULATION</span>
+          <span class="tag">PRETEXT 말풍선</span>
+          <span class="tag">한국어</span>
+        </div>
+        <button class="play-btn">▶ 플레이</button>
+      </a>
+
+      <a class="card card-birds" href="/angry-birds">
+        <span class="card-icon">🐦</span>
+        <div class="card-title">앵그리버드</div>
+        <div class="card-desc">새를 발사해 돼지를 맞춰라! 데미지 숫자와 블록 라벨을 Pretext로 정밀 위치 계산.</div>
+        <div class="card-tags">
+          <span class="tag">ACTION</span>
+          <span class="tag">PRETEXT 데미지</span>
+          <span class="tag">PHYSICS</span>
+        </div>
+        <button class="play-btn">▶ 플레이</button>
+      </a>
+
+      <a class="card card-word" href="/word-gravity">
+        <span class="card-icon">🌌</span>
+        <div class="card-title">Word Gravity</div>
+        <div class="card-desc">텍스트 카드가 중력으로 떨어집니다! Pretext의 shrinkwrap으로 카드 크기를 정확히 측정.</div>
+        <div class="card-tags">
+          <span class="tag">SANDBOX</span>
+          <span class="tag">PRETEXT 물리</span>
+          <span class="tag">다국어</span>
+        </div>
+        <button class="play-btn">▶ 플레이</button>
+      </a>
+    </div>
+
+    <div class="footer">
+      <p>Built with <a href="https://github.com/chenglou/pretext" target="_blank">chenglou/pretext</a> — DOM-free text measurement</p>
+    </div>
+  </div>
+
+  <script>
+    // Stars
+    const bg = document.getElementById('bg')
+    for (let i = 0; i < 80; i++) {
+      const s = document.createElement('div')
+      s.className = 'star'
+      const size = Math.random() * 2 + 0.5
+      s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${2+Math.random()*4}s;--a:${Math.random()*.3+.05};--b:${Math.random()*.5+.3};animation-delay:${Math.random()*4}s`
+      document.body.appendChild(s)
+    }
+  </script>
+</body>
+</html>
