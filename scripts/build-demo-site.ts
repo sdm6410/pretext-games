@@ -33,11 +33,11 @@ if (result.exitCode !== 0) {
 }
 
 const targets = [
+  { source: 'index.html', target: 'demos/index.html' },
   { source: 'home.html', target: 'index.html' },
   { source: 'pet-game.html', target: 'pet-game/index.html' },
   { source: 'angry-birds.html', target: 'angry-birds/index.html' },
   { source: 'word-gravity.html', target: 'word-gravity/index.html' },
-  { source: 'index.html', target: 'demos/index.html' },
   { source: 'accordion.html', target: 'accordion/index.html' },
   { source: 'bubbles.html', target: 'bubbles/index.html' },
   { source: 'dynamic-layout.html', target: 'dynamic-layout/index.html' },
