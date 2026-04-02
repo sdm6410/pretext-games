@@ -16,7 +16,7 @@ let frame = 0
 let gameOver = false
 
 const keys = { Left: false, Right: false, Up: false, Space: false }
-let lastSpace = false
+let shootRequested = false
 
 // ── Pretext Floating Points ───────────────────────────────────────────────────
 function showPoints(x: number, y: number, text: string, color: string) {
@@ -89,7 +89,7 @@ let items: Item[] = []
 const GRAVITY = 0.4
 const JUMP_FORCE = -8.5
 const MOVE_SPEED = 3.5
-const BUBBLE_SPEED = 8
+const BUBBLE_SPEED = 11
 
 // ── Level Design ──────────────────────────────────────────────────────────────
 function loadLevel(lv: number) {
@@ -145,7 +145,10 @@ window.addEventListener('keydown', e => {
   if (e.code === 'ArrowLeft') keys.Left = true
   if (e.code === 'ArrowRight') keys.Right = true
   if (e.code === 'ArrowUp') keys.Up = true
-  if (e.code === 'Space') keys.Space = true
+  if (e.code === 'Space') {
+    keys.Space = true
+    if (!e.repeat) shootRequested = true
+  }
 })
 
 window.addEventListener('keyup', e => {
@@ -211,14 +214,14 @@ function update() {
     if (player.y > CH) player.y = -50
 
     // Shoot Bubble
-    if (keys.Space && !lastSpace) {
+    if (shootRequested) {
       bubbles.push({
         x: player.x + (player.dir === 1 ? player.w : -24), y: player.y + 4,
         r: 16, vx: player.dir * BUBBLE_SPEED, vy: 0,
         type: 'empty', lifetime: 0, dir: player.dir
       })
+      shootRequested = false
     }
-    lastSpace = keys.Space
   }
 
   // -- Bubble Update --
@@ -228,7 +231,7 @@ function update() {
 
     if (b.type === 'empty') {
       // Fly straight, then float up
-      if (b.lifetime > 25) { b.vx *= 0.9; b.vy = -1.5 }
+      if (b.lifetime > 20) { b.vx *= 0.85; b.vy = -1.5 }
       
       // Wobble
       b.x += b.vx; b.y += b.vy + Math.sin(b.lifetime * 0.1) * 0.5
