@@ -4,6 +4,10 @@ import path from 'node:path'
 const root = process.cwd()
 const outdir = path.join(root, 'site')
 const entrypoints = [
+  'pages/angry-birds.html',
+  'pages/home.html',
+  'pages/pet-game.html',
+  'pages/word-gravity.html',
   'pages/demos/index.html',
   'pages/demos/accordion.html',
   'pages/demos/bubbles.html',
@@ -29,7 +33,11 @@ if (result.exitCode !== 0) {
 }
 
 const targets = [
-  { source: 'index.html', target: 'index.html' },
+  { source: 'home.html', target: 'index.html' },
+  { source: 'pet-game.html', target: 'pet-game/index.html' },
+  { source: 'angry-birds.html', target: 'angry-birds/index.html' },
+  { source: 'word-gravity.html', target: 'word-gravity/index.html' },
+  { source: 'index.html', target: 'demos/index.html' },
   { source: 'accordion.html', target: 'accordion/index.html' },
   { source: 'bubbles.html', target: 'bubbles/index.html' },
   { source: 'dynamic-layout.html', target: 'dynamic-layout/index.html' },
@@ -50,6 +58,7 @@ await rm(path.join(outdir, 'pages'), { recursive: true, force: true })
 async function resolveBuiltHtmlPath(relativePath: string): Promise<string> {
   const candidates = [
     path.join(outdir, relativePath),
+    path.join(outdir, 'pages', relativePath),
     path.join(outdir, 'pages', 'demos', relativePath),
   ]
   for (let index = 0; index < candidates.length; index++) {
